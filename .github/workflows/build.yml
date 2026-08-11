@@ -46,7 +46,7 @@ jobs:
           source build/versions.env
           set +a
           while IFS='=' read -r key value; do
-            [[ $key =~ ^[A-Z_]+$ ]] && echo "$key=$value" >>"$GITHUB_ENV"
+            [[ $key =~ ^[A-Z_][A-Z0-9_]*$ ]] && echo "$key=$value" >>"$GITHUB_ENV"
           done < build/versions.env
           printf '%s' '${{ secrets.GITHUB_TOKEN }}' >/tmp/github-token
 
