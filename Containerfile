@@ -7,7 +7,7 @@ ARG KERNEL_VERSION=7.1.5-ogc5.1.fc44.x86_64
 ARG COSMIC_EXTRA_COMMIT=66e065728d81eab86171e542dad08fb628c88494
 ARG DMS_VERSION=1.5.3
 ARG DMS_SHA256=ed543447b98568a092845164ea9cc20538ed8efa421214fba2969ab1b90a3f53
-ARG VICINAE_VERSION=0.24.0
+ARG VICINAE_VERSION=0.25.0
 
 FROM ghcr.io/ublue-os/akmods:${KERNEL_FLAVOR}-${FEDORA_VERSION}-${KERNEL_VERSION} AS akmods
 FROM ghcr.io/ublue-os/akmods-nvidia-open:${KERNEL_FLAVOR}-${FEDORA_VERSION}-${KERNEL_VERSION} AS akmods-nvidia
@@ -88,7 +88,7 @@ RUN chmod 0755 /usr/bin/start-axioma-cosmic-niri /usr/bin/axioma-* \
       /usr/lib/tuned/profiles/axioma-*/script.sh \
       /usr/share/axioma/tests/image-assertions.sh && \
     chmod 0644 /usr/share/wayland-sessions/*.desktop && \
-    systemctl enable axioma-flatpak-setup.service && \
+    systemctl enable axioma-flatpak-setup.service dev-hugepages1G.mount && \
     systemctl --global enable axioma-welcome.service && \
     kernel="$(find /usr/lib/modules -mindepth 1 -maxdepth 1 -type d -printf '%f\n')" && \
     test "$kernel" = "${KERNEL_VERSION}" && \

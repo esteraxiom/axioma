@@ -47,7 +47,6 @@ systemctl enable tuned-ppd.service 2>/dev/null || true
 systemctl enable greenboot-healthcheck.service greenboot-set-rollback-trigger.service
 systemctl enable uupd.timer input-remapper.service dmemcg-booster-system.service
 systemctl --global enable dmemcg-booster-user.service
-systemctl enable dev-hugepages1G.mount
 systemctl enable brew-setup.service 2>/dev/null || true
 
 systemctl disable scx_loader.service tailscaled.service waydroid-container.service \
