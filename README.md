@@ -48,7 +48,7 @@ verify it:
 ```bash
 sha256sum -c axioma-*.iso.sha256
 cosign verify-blob --key cosign.pub \
-  --signature axioma-*.iso.sig axioma-*.iso
+  --bundle axioma-*.iso.bundle axioma-*.iso
 ```
 
 The ISO starts an interactive Anaconda installer. It never selects or erases a
@@ -149,4 +149,3 @@ The architecture and upstream boundaries are documented in
 
 Axioma's original and adapted source is GPL-3.0-only. Third-party components
 retain their upstream licenses; see [`NOTICE`](NOTICE).
-

@@ -103,7 +103,7 @@ jobs:
         run: |
           cosign sign-blob -y --key env://COSIGN_PRIVATE_KEY \
             '${{ steps.artifacts.outputs.path }}' \
-            --output-signature '${{ steps.artifacts.outputs.path }}.sig'
+            --bundle '${{ steps.artifacts.outputs.path }}.bundle'
 
       - name: Attest ISO provenance
         uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8 # v4
