@@ -57,17 +57,17 @@ COPY --from=dms-release /out/completions/completion.zsh /usr/share/zsh/site-func
 
 RUN --mount=type=cache,target=/var/cache \
     --mount=type=cache,target=/var/log \
+    --mount=type=secret,id=GITHUB_TOKEN \
+    FEDORA_VERSION="${FEDORA_VERSION}" VICINAE_VERSION="${VICINAE_VERSION}" \
+    /ctx/build/configure-image
+
+RUN --mount=type=cache,target=/var/cache \
+    --mount=type=cache,target=/var/log \
     --mount=type=bind,from=akmods,source=/kernel-rpms,target=/tmp/kernel-rpms \
     --mount=type=bind,from=akmods,source=/rpms/common,target=/tmp/akmods-common \
     --mount=type=bind,from=akmods,source=/rpms/kmods,target=/tmp/akmods-kmods \
     chmod 0755 /ctx/build/install-kernel-akmods /ctx/build/configure-image && \
     /ctx/build/install-kernel-akmods
-
-RUN --mount=type=cache,target=/var/cache \
-    --mount=type=cache,target=/var/log \
-    --mount=type=secret,id=GITHUB_TOKEN \
-    FEDORA_VERSION="${FEDORA_VERSION}" VICINAE_VERSION="${VICINAE_VERSION}" \
-    /ctx/build/configure-image
 
 RUN --mount=type=cache,target=/var/cache \
     --mount=type=cache,target=/var/log \
