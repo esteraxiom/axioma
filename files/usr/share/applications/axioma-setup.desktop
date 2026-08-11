@@ -1,0 +1,9 @@
+[Desktop Entry]
+Name=Axioma Setup
+Comment=Configure migration, storage, services, and system updates
+Exec=cosmic-term -e /usr/bin/axioma-setup
+Icon=preferences-system
+Terminal=false
+Type=Application
+Categories=System;
+Keywords=Axioma;Setup;Migration;Gaming;

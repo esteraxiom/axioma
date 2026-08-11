@@ -1,0 +1,42 @@
+#!/usr/bin/bash
+# SPDX-License-Identifier: GPL-3.0-only
+set -euo pipefail
+
+run_task() {
+    clear
+    "$@"
+    echo
+    read -r -p 'Press Enter to return to Axioma Setup...'
+}
+
+while true; do
+    clear
+    choice=$(gum choose --header 'Axioma Setup' \
+        'System status' \
+        'Configure data-disk mounts' \
+        'Migrate CachyOS home' \
+        'Enable Sunshine' \
+        'Enable Waydroid' \
+        'Enable Tailscale' \
+        'Enable Cockpit' \
+        'Enable virtualization' \
+        'Enable scx scheduler' \
+        'Upgrade Axioma' \
+        'Rollback Axioma' \
+        'Exit') || exit 0
+
+    case "$choice" in
+        'System status') run_task ujust axioma-status ;;
+        'Configure data-disk mounts') run_task ujust axioma-mount-data ;;
+        'Migrate CachyOS home') run_task ujust axioma-migrate-home ;;
+        'Enable Sunshine') run_task ujust axioma-setup-sunshine enable ;;
+        'Enable Waydroid') run_task ujust axioma-setup-waydroid enable ;;
+        'Enable Tailscale') run_task ujust axioma-setup-tailscale enable ;;
+        'Enable Cockpit') run_task ujust axioma-setup-cockpit enable ;;
+        'Enable virtualization') run_task ujust axioma-setup-virtualization enable ;;
+        'Enable scx scheduler') run_task ujust axioma-enable-scx enable ;;
+        'Upgrade Axioma') run_task ujust axioma-update ;;
+        'Rollback Axioma') run_task ujust axioma-rollback ;;
+        'Exit') exit 0 ;;
+    esac
+done

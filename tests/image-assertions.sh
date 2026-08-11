@@ -9,8 +9,8 @@ mapfile -t module_trees < <(find /usr/lib/modules -mindepth 1 -maxdepth 1 -type 
 [[ -f "/usr/lib/modules/${expected_kernel}/initramfs.img" ]]
 
 rpm -q niri cosmic-session cosmic-greeter steam lutris terra-gamescope \
-    nvidia-driver vicinae quickshell
-command -v dms cosmic-ext-alternative-startup xwayland-satellite
+    nvidia-driver vicinae quickshell zram-generator
+command -v dms cosmic-ext-alternative-startup xwayland-satellite axioma-setup
 
 kmod_version=$(rpm -q --qf '%{VERSION}' kmod-nvidia)
 driver_version=$(rpm -q --qf '%{VERSION}' nvidia-driver)

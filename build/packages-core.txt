@@ -23,7 +23,6 @@ flatpak
 just
 ublue-os-just
 ublue-brew
-yafti
 jq
 git
 curl
@@ -45,5 +44,5 @@ i2c-tools
 ddcutil
 vulkan-tools
 tuned-ppd
-systemd-zram-generator
+zram-generator
 mokutil

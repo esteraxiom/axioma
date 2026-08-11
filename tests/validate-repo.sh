@@ -41,6 +41,8 @@ done < <(rg -o 'uses: [^ ]+@[0-9a-f]+' .github/workflows | sed 's/.*@//')
 grep -Eq '^KERNEL_VERSION=[0-9].*\.fc44\.x86_64$' build/versions.env
 grep -Eq '^DMS_SHA256=[0-9a-f]{64}$' build/versions.env
 grep -Fq '^[A-Z_][A-Z0-9_]*$' .github/workflows/build.yml
+grep -Fxq 'zram-generator' build/packages-core.txt
+! grep -Fxq 'yafti' build/packages-core.txt
 grep -Fq 'Axioma COSMIC on niri' files/usr/share/wayland-sessions/axioma-cosmic-niri.desktop
 
 echo 'Repository validation passed.'
