@@ -1,0 +1,8 @@
+ARG BASE_IMAGE=ghcr.io/esteraxiom/axioma:stable
+ARG INSTALL_IMAGE_PAYLOAD=ghcr.io/esteraxiom/axioma:stable
+
+FROM ${BASE_IMAGE}
+ARG INSTALL_IMAGE_PAYLOAD
+COPY installer /src/installer
+RUN INSTALL_IMAGE_PAYLOAD="${INSTALL_IMAGE_PAYLOAD}" /src/installer/build.sh
+

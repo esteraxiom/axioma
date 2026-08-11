@@ -1,0 +1,73 @@
+// Axioma's COSMIC-on-niri defaults. User overrides are loaded afterwards.
+config-notification {
+    disable-failed
+}
+
+input {
+    keyboard {
+        xkb {
+            layout "latam"
+            options "compose:caps"
+        }
+        numlock
+    }
+    focus-follows-mouse
+}
+
+layout {
+    gaps 8
+    center-focused-column "never"
+    preset-column-widths {
+        proportion 0.33333
+        proportion 0.5
+        proportion 0.66667
+    }
+    default-column-width { proportion 0.5; }
+    focus-ring { off; }
+    border {
+        on
+        width 2
+        active-color "#74c7ec"
+        inactive-color "#45475a"
+        urgent-color "#f38ba8"
+    }
+}
+
+spawn-at-startup "cosmic-ext-alternative-startup"
+
+prefer-no-csd
+screenshot-path "~/Pictures/Screenshots/Screenshot from %Y-%m-%d %H-%M-%S.png"
+
+binds {
+    Mod+T { spawn "cosmic-term"; }
+    Mod+D { spawn "cosmic-launcher"; }
+    Mod+Shift+D { spawn "cosmic-app-library"; }
+    Mod+Alt+L { spawn "loginctl" "lock-session"; }
+    Mod+Q { close-window; }
+    Mod+Left  { focus-column-left; }
+    Mod+Down  { focus-window-down; }
+    Mod+Up    { focus-window-up; }
+    Mod+Right { focus-column-right; }
+    Mod+Shift+Left  { move-column-left; }
+    Mod+Shift+Down  { move-window-down; }
+    Mod+Shift+Up    { move-window-up; }
+    Mod+Shift+Right { move-column-right; }
+    Mod+R { switch-preset-column-width; }
+    Mod+F { maximize-column; }
+    Mod+Shift+F { fullscreen-window; }
+    Mod+WheelScrollDown cooldown-ms=150 { focus-workspace-down; }
+    Mod+WheelScrollUp cooldown-ms=150 { focus-workspace-up; }
+    Print { screenshot; }
+    Ctrl+Print { screenshot-screen; }
+    Alt+Print { screenshot-window; }
+}
+
+window-rule {
+    match app-id=r#"^org\.wezfurlong\.wezterm$"#
+    default-column-width {}
+}
+window-rule {
+    match app-id=r#"^(steam|lutris|net\.lutris\.Lutris)$"#
+    open-maximized true
+}
+

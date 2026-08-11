@@ -1,0 +1,56 @@
+name: Sync upstream locks
+
+on:
+  schedule:
+    - cron: "5 10 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  sync:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Check out source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          fetch-depth: 0
+
+      - name: Resolve Fedora and Bazzite locks
+        run: |
+          set -euo pipefail
+          curl -fsSL https://raw.githubusercontent.com/ublue-os/bazzite/main/.github/workflows/build.yml \
+            -o /tmp/bazzite-build.yml
+          kernel=$(sed -nE 's/^[[:space:]]*kernel_version:[[:space:]]*([^[:space:]]+).*/\1/p' /tmp/bazzite-build.yml | head -1)
+          [[ $kernel =~ ^[0-9].*\.fc44\.x86_64$ ]]
+
+          base_digest=$(docker manifest inspect quay.io/fedora-ostree-desktops/cosmic-atomic:44 | \
+            jq -r '.manifests[] | select(.platform.architecture=="amd64" and .platform.os=="linux") | .digest')
+          [[ $base_digest =~ ^sha256:[0-9a-f]{64}$ ]]
+
+          sed -i -E "s#^BASE_IMAGE=.*#BASE_IMAGE=quay.io/fedora-ostree-desktops/cosmic-atomic:44@${base_digest}#" build/versions.env
+          sed -i -E "s/^KERNEL_VERSION=.*/KERNEL_VERSION=${kernel}/" build/versions.env
+          sed -i -E "0,/^ARG KERNEL_VERSION=.*/s//ARG KERNEL_VERSION=${kernel}/" Containerfile
+
+      - name: Open or update lock PR
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          if git diff --quiet; then
+            echo 'Locks are current.'
+            exit 0
+          fi
+          branch=automation/upstream-locks
+          git config user.name 'axioma-updater[bot]'
+          git config user.email 'axioma-updater[bot]@users.noreply.github.com'
+          git switch -C "$branch"
+          git add build/versions.env Containerfile
+          git commit -m 'chore: update Fedora and Bazzite locks'
+          git push --force-with-lease origin "$branch"
+          gh pr view "$branch" >/dev/null 2>&1 || \
+            gh pr create --base main --head "$branch" \
+              --title 'chore: update Fedora and Bazzite locks' \
+              --body 'Automated lock refresh. Merge only after the image build passes.'
+

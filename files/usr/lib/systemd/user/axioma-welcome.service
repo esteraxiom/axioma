@@ -1,0 +1,13 @@
+[Unit]
+Description=Axioma first-login setup checklist
+After=graphical-session.target
+PartOf=graphical-session.target
+ConditionPathExists=!%h/.config/axioma/welcome-complete
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/axioma-welcome
+
+[Install]
+WantedBy=default.target
+

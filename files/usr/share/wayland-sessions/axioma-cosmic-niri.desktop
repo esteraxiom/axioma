@@ -1,0 +1,8 @@
+[Desktop Entry]
+Name=Axioma COSMIC on niri
+Comment=COSMIC desktop components running on the niri compositor
+Exec=/usr/bin/start-axioma-cosmic-niri
+TryExec=/usr/bin/start-axioma-cosmic-niri
+Type=Application
+DesktopNames=COSMIC;niri
+

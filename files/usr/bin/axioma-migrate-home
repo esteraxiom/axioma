@@ -1,0 +1,73 @@
+#!/usr/bin/bash
+# SPDX-License-Identifier: GPL-3.0-only
+set -euo pipefail
+
+source_device=/dev/disk/by-uuid/d6f9d146-8434-4baa-b7b7-b2a4205d3b31
+source_user=clari
+gaming_data=0
+
+while (($#)); do
+    case "$1" in
+        --source) source_device=$2; shift 2 ;;
+        --source-user) source_user=$2; shift 2 ;;
+        --gaming-data) gaming_data=1; shift ;;
+        *) echo "Unknown argument: $1" >&2; exit 2 ;;
+    esac
+done
+
+[[ -e "$source_device" ]] || { echo "Source device not found: $source_device" >&2; exit 1; }
+[[ $USER != root ]] || { echo 'Run this command as the destination desktop user.' >&2; exit 1; }
+
+mountpoint=/run/axioma-cachyos-home
+sudo install -d -m 0755 "$mountpoint"
+if ! mountpoint -q "$mountpoint"; then
+    sudo mount -o ro,subvol=@home "$source_device" "$mountpoint"
+fi
+trap 'sudo umount "$mountpoint" 2>/dev/null || true' EXIT
+
+old_home=${mountpoint}/${source_user}
+[[ -d "$old_home" ]] || { echo "Old home not found: $old_home" >&2; exit 1; }
+
+for directory in Desktop Documents Downloads Music Pictures Public Templates Videos; do
+    [[ -d "${old_home}/${directory}" ]] || continue
+    install -d "${HOME}/${directory}"
+    rsync -a --info=progress2 "${old_home}/${directory}/" "${HOME}/${directory}/"
+done
+
+timestamp=$(date +%Y%m%d-%H%M%S)
+backup=${HOME}/.local/state/axioma-migration/${timestamp}
+install -d "$backup"
+
+copy_config() {
+    local relative=$1
+    [[ -e "${old_home}/${relative}" ]] || return 0
+    if [[ -e "${HOME}/${relative}" ]]; then
+        install -d "${backup}/$(dirname "$relative")"
+        cp -a "${HOME}/${relative}" "${backup}/${relative}"
+    fi
+    install -d "${HOME}/$(dirname "$relative")"
+    rsync -a --exclude='cache/' "${old_home}/${relative}" "${HOME}/$(dirname "$relative")/"
+}
+
+copy_config .config/niri
+copy_config .config/quickshell
+copy_config .config/vicinae
+copy_config .config/DankMaterialShell
+copy_config .config/environment.d/90-dms.conf
+
+if ((gaming_data)); then
+    copy_config .config/heroic
+    copy_config .config/retroarch
+    copy_config .var/app/com.usebottles.bottles
+    copy_config .var/app/net.pcsx2.PCSX2
+fi
+
+while IFS= read -r -d '' file; do
+    sed -i "s#/home/${source_user}#/home/${USER}#g" "$file"
+done < <(rg -l -0 -F "/home/${source_user}" \
+    "$HOME/.config/niri" "$HOME/.config/quickshell" "$HOME/.config/vicinae" 2>/dev/null || true)
+
+niri validate -c "$HOME/.config/niri/config.kdl"
+niri validate -c "$HOME/.config/niri/cosmic.kdl"
+echo "Migration complete. Replaced files were backed up under ${backup}."
+

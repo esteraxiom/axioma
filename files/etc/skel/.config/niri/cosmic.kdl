@@ -1,0 +1,2 @@
+include "/usr/share/axioma/niri/cosmic-base.kdl"
+include optional=true "~/.config/niri/cosmic-local.kdl"

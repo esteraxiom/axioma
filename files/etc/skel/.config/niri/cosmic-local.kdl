@@ -1,0 +1,10 @@
+// Machine- and user-specific COSMIC-on-niri overrides belong here.
+// This example matches the original clariframe display arrangement.
+output "HDMI-A-1" {
+    position x=0 y=0
+}
+output "HDMI-A-2" {
+    mode "1366x768@59.790"
+    position x=1366 y=0
+}
+

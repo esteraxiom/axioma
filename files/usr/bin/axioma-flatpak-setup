@@ -1,0 +1,15 @@
+#!/usr/bin/bash
+# SPDX-License-Identifier: GPL-3.0-only
+set -euo pipefail
+
+manifest=/usr/share/axioma/flatpaks
+state=/var/lib/axioma/flatpaks-v1
+
+install -d -m 0755 /var/lib/axioma
+flatpak remote-add --system --if-not-exists flathub \
+    https://dl.flathub.org/repo/flathub.flatpakrepo
+
+mapfile -t applications < <(sed -E '/^[[:space:]]*(#|$)/d' "$manifest")
+flatpak install --system --noninteractive --or-update flathub "${applications[@]}"
+touch "$state"
+

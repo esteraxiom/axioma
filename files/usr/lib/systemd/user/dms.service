@@ -1,0 +1,12 @@
+[Unit]
+Description=DankMaterialShell for standalone niri
+PartOf=graphical-session.target
+After=graphical-session-pre.target
+
+[Service]
+Type=simple
+ExecCondition=/usr/bin/bash -c '[[ "${XDG_CURRENT_DESKTOP:-}" == "niri" ]]'
+ExecStart=/usr/bin/dms run
+Restart=on-failure
+RestartSec=2
+

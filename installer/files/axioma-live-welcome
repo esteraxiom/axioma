@@ -1,0 +1,17 @@
+#!/usr/bin/bash
+# SPDX-License-Identifier: GPL-3.0-only
+set -euo pipefail
+
+if [[ ! -d /sys/firmware/efi ]]; then
+    yad --warning --on-top --title='UEFI required' \
+        --text='Axioma supports UEFI installation only. Disable CSM/Legacy Boot and restart.' \
+        --button='Shut down':0
+    systemctl poweroff
+    exit 0
+fi
+
+text='<big><b>Welcome to the Axioma live installer</b></big>\n\nThe live session uses Fedora installer kernel. Gaming and NVIDIA optimizations are part of the installed payload.\n\nSelect the 223.6 GiB WD Green disk explicitly. Installing to it will erase its old Bluefin partitions.'
+if yad --question --on-top --width=640 --title='Install Axioma' \
+    --text="$text" --button='Open installer':0 --button='Stay in live session':1; then
+    liveinst &
+fi

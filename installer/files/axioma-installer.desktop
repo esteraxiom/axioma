@@ -1,0 +1,6 @@
+[Desktop Entry]
+Name=Axioma Installer Welcome
+Exec=/usr/bin/axioma-live-welcome
+Type=Application
+NoDisplay=true
+

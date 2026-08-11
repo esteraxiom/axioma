@@ -1,0 +1,21 @@
+{
+  "default": [
+    { "type": "insecureAcceptAnything" }
+  ],
+  "transports": {
+    "docker": {
+      "ghcr.io/esteraxiom/axioma": [
+        {
+          "type": "sigstoreSigned",
+          "keyPath": "/etc/pki/containers/axioma.pub",
+          "signedIdentity": { "type": "matchRepository" }
+        }
+      ]
+    },
+    "containers-storage": {
+      "": [
+        { "type": "insecureAcceptAnything" }
+      ]
+    }
+  }
+}

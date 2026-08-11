@@ -1,0 +1,80 @@
+set shell := ["bash", "-euo", "pipefail", "-c"]
+
+axioma-status:
+    @echo 'Axioma image:'
+    @bootc status
+    @echo
+    @uname -r
+    @nvidia-smi --query-gpu=name,driver_version --format=csv,noheader
+    @echo
+    @systemctl is-enabled cosmic-greeter.service uupd.timer || true
+
+axioma-update:
+    sudo bootc upgrade
+
+axioma-rollback:
+    sudo bootc rollback
+
+axioma-mount-data:
+    /usr/bin/axioma-mount-data
+
+axioma-migrate-home *ARGS:
+    /usr/bin/axioma-migrate-home {{ARGS}}
+
+axioma-setup-sunshine ACTION="status":
+    #!/usr/bin/bash
+    case "{{ACTION}}" in
+      status) flatpak info dev.lizardbyte.app.Sunshine >/dev/null 2>&1 && systemctl --user is-enabled app-dev.lizardbyte.app.Sunshine.service || true ;;
+      enable) flatpak install --system -y flathub dev.lizardbyte.app.Sunshine; flatpak run --command=additional-install.sh dev.lizardbyte.app.Sunshine; systemctl --user enable --now app-dev.lizardbyte.app.Sunshine.service ;;
+      disable) systemctl --user disable --now app-dev.lizardbyte.app.Sunshine.service ;;
+      *) echo 'Use status, enable, or disable' >&2; exit 2 ;;
+    esac
+
+axioma-setup-waydroid ACTION="status":
+    #!/usr/bin/bash
+    case "{{ACTION}}" in
+      status) systemctl is-enabled waydroid-container.service || true ;;
+      enable) sudo waydroid init; sudo systemctl enable --now waydroid-container.service ;;
+      disable) sudo systemctl disable --now waydroid-container.service ;;
+      *) echo 'Use status, enable, or disable' >&2; exit 2 ;;
+    esac
+
+axioma-setup-tailscale ACTION="status":
+    #!/usr/bin/bash
+    case "{{ACTION}}" in
+      status) systemctl is-enabled tailscaled.service || true ;;
+      enable) sudo systemctl enable --now tailscaled.service; sudo tailscale up ;;
+      disable) sudo tailscale down || true; sudo systemctl disable --now tailscaled.service ;;
+      *) echo 'Use status, enable, or disable' >&2; exit 2 ;;
+    esac
+
+axioma-setup-cockpit ACTION="status":
+    #!/usr/bin/bash
+    case "{{ACTION}}" in
+      status) systemctl is-enabled cockpit.socket || true ;;
+      enable) sudo systemctl enable --now cockpit.socket ;;
+      disable) sudo systemctl disable --now cockpit.socket ;;
+      *) echo 'Use status, enable, or disable' >&2; exit 2 ;;
+    esac
+
+axioma-setup-virtualization ACTION="status":
+    #!/usr/bin/bash
+    case "{{ACTION}}" in
+      status) systemctl is-enabled libvirtd.service || true ;;
+      enable) sudo systemctl enable --now libvirtd.service; sudo usermod -aG libvirt "$USER" ;;
+      disable) sudo systemctl disable --now libvirtd.service ;;
+      *) echo 'Use status, enable, or disable' >&2; exit 2 ;;
+    esac
+
+axioma-enable-scx ACTION="status":
+    #!/usr/bin/bash
+    case "{{ACTION}}" in
+      status) systemctl is-enabled scx_loader.service || true ;;
+      enable) sudo systemctl enable --now scx_loader.service ;;
+      disable) sudo systemctl disable --now scx_loader.service ;;
+      *) echo 'Use status, enable, or disable' >&2; exit 2 ;;
+    esac
+
+axioma-enroll-secure-boot-key:
+    /usr/bin/axioma-enroll-secure-boot-key
+

@@ -1,0 +1,25 @@
+#!/usr/bin/bash
+# SPDX-License-Identifier: GPL-3.0-only
+set -euo pipefail
+
+config_home=${XDG_CONFIG_HOME:-"$HOME/.config"}
+export NIRI_CONFIG="${config_home}/niri/cosmic.kdl"
+export XDG_CURRENT_DESKTOP="COSMIC:niri"
+export XDG_SESSION_DESKTOP="axioma-cosmic-niri"
+export XDG_SESSION_TYPE=wayland
+export XCURSOR_THEME="${XCURSOR_THEME:-Cosmic}"
+export _JAVA_AWT_WM_NONREPARENTING=1
+export GDK_BACKEND=wayland,x11
+export MOZ_ENABLE_WAYLAND=1
+export QT_QPA_PLATFORM='wayland;xcb'
+
+systemctl --user reset-failed cosmic-session.target graphical-session.target 2>/dev/null || true
+systemctl --user import-environment \
+    NIRI_CONFIG XDG_CURRENT_DESKTOP XDG_SESSION_DESKTOP XDG_SESSION_TYPE \
+    XCURSOR_THEME GDK_BACKEND MOZ_ENABLE_WAYLAND QT_QPA_PLATFORM
+
+if [[ -z ${DBUS_SESSION_BUS_ADDRESS:-} ]]; then
+    exec dbus-run-session -- cosmic-session niri
+fi
+exec cosmic-session niri
+

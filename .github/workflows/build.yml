@@ -1,0 +1,129 @@
+name: Build testing image
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+  schedule:
+    - cron: "5 11 * * *"
+  workflow_dispatch:
+
+concurrency:
+  group: build-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions: {}
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+      packages: write
+      id-token: write
+      attestations: write
+    steps:
+      - name: Check out source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+
+      - name: Free runner disk space
+        uses: ublue-os/remove-unwanted-software@cc0becac701cf642c8f0a6613bbdaf5dc36b259e # v9
+        with:
+          remove-codeql: true
+
+      - name: Install validation tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y podman shellcheck desktop-file-utils
+
+      - name: Validate repository
+        run: bash tests/validate-repo.sh
+
+      - name: Prepare build arguments
+        run: |
+          set -a
+          source build/versions.env
+          set +a
+          while IFS='=' read -r key value; do
+            [[ $key =~ ^[A-Z_]+$ ]] && echo "$key=$value" >>"$GITHUB_ENV"
+          done < build/versions.env
+          printf '%s' '${{ secrets.GITHUB_TOKEN }}' >/tmp/github-token
+
+      - name: Build bootc image
+        run: |
+          sudo podman build --pull=newer \
+            --secret id=GITHUB_TOKEN,src=/tmp/github-token \
+            --build-arg "FEDORA_VERSION=$FEDORA_VERSION" \
+            --build-arg "ARCH=$ARCH" \
+            --build-arg "BASE_IMAGE=$BASE_IMAGE" \
+            --build-arg "KERNEL_FLAVOR=$KERNEL_FLAVOR" \
+            --build-arg "KERNEL_VERSION=$KERNEL_VERSION" \
+            --build-arg "COSMIC_EXTRA_COMMIT=$COSMIC_EXTRA_COMMIT" \
+            --build-arg "DMS_VERSION=$DMS_VERSION" \
+            --build-arg "DMS_SHA256=$DMS_SHA256" \
+            --build-arg "VICINAE_VERSION=$VICINAE_VERSION" \
+            --label "org.opencontainers.image.revision=$GITHUB_SHA" \
+            --label "org.opencontainers.image.created=$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
+            --tag localhost/axioma:testing --file Containerfile .
+          rm -f /tmp/github-token
+
+      - name: Run image assertions
+        run: |
+          sudo podman run --rm --entrypoint /usr/bin/bash \
+            localhost/axioma:testing /usr/share/axioma/tests/image-assertions.sh
+
+      - name: Rechunk image for efficient updates
+        run: |
+          sudo podman run --rm --privileged \
+            -v /var/lib/containers:/var/lib/containers \
+            --entrypoint /usr/bin/rpm-ostree \
+            localhost/axioma:testing \
+            compose build-chunked-oci --max-layers 127 --format-version=2 --bootc \
+            --from localhost/axioma:testing \
+            --output containers-storage:localhost/axioma:testing
+
+      - name: Log in to GHCR
+        if: github.event_name != 'pull_request'
+        run: |
+          printf '%s' '${{ secrets.GITHUB_TOKEN }}' | \
+            sudo podman login ghcr.io -u '${{ github.actor }}' --password-stdin
+
+      - name: Push immutable and testing tags
+        id: push
+        if: github.event_name != 'pull_request'
+        run: |
+          short_sha=${GITHUB_SHA::12}
+          date_tag=$(date -u +%Y%m%d)
+          image=ghcr.io/${GITHUB_REPOSITORY_OWNER,,}/axioma
+          sudo podman tag localhost/axioma:testing "$image:testing"
+          sudo podman tag localhost/axioma:testing "$image:sha-$short_sha"
+          sudo podman tag localhost/axioma:testing "$image:testing-$date_tag-$short_sha"
+          sudo podman push "$image:sha-$short_sha"
+          sudo podman push "$image:testing-$date_tag-$short_sha"
+          sudo podman push --digestfile /tmp/axioma-digest "$image:testing"
+          echo "digest=$(cat /tmp/axioma-digest)" >>"$GITHUB_OUTPUT"
+          echo "image=$image" >>"$GITHUB_OUTPUT"
+
+      - name: Install Cosign
+        if: github.event_name != 'pull_request'
+        uses: sigstore/cosign-installer@6f9f17788090df1f26f669e9d70d6ae9567deba6 # v4.1.2
+        with:
+          cosign-release: v3.1.2
+
+      - name: Sign image digest
+        if: github.event_name != 'pull_request'
+        env:
+          COSIGN_PRIVATE_KEY: ${{ secrets.SIGNING_SECRET }}
+        run: |
+          cosign sign -y --new-bundle-format=false --use-signing-config=false \
+            --key env://COSIGN_PRIVATE_KEY \
+            '${{ steps.push.outputs.image }}@${{ steps.push.outputs.digest }}'
+
+      - name: Attest build provenance
+        if: github.event_name != 'pull_request'
+        uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8 # v4
+        with:
+          subject-name: ${{ steps.push.outputs.image }}
+          subject-digest: ${{ steps.push.outputs.digest }}
+          push-to-registry: true

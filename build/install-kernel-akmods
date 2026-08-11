@@ -1,0 +1,48 @@
+#!/usr/bin/bash
+# SPDX-License-Identifier: Apache-2.0
+# Adapted from ublue-os/bazzite build_files/install-kernel-akmods.
+set -euo pipefail
+
+kernel_dir=/tmp/kernel-rpms
+common_dir=/tmp/akmods-common
+kmods_dir=/tmp/akmods-kmods
+
+for required in "$kernel_dir" "$common_dir" "$kmods_dir"; do
+    test -d "$required" || { echo "missing build mount: $required" >&2; exit 1; }
+done
+
+pushd /usr/lib/kernel/install.d >/dev/null
+mv 05-rpmostree.install 05-rpmostree.install.axioma-backup
+mv 50-dracut.install 50-dracut.install.axioma-backup
+printf '#!/bin/sh\nexit 0\n' >05-rpmostree.install
+printf '#!/bin/sh\nexit 0\n' >50-dracut.install
+chmod 0755 05-rpmostree.install 50-dracut.install
+popd >/dev/null
+
+for package in kernel kernel-core kernel-modules kernel-modules-core \
+    kernel-modules-extra kernel-tools kernel-tools-libs; do
+    rpm --erase "$package" --nodeps 2>/dev/null || true
+done
+rm -rf /usr/lib/modules
+
+dnf5 install -y \
+    "$kernel_dir"/kernel-[0-9]*.rpm \
+    "$kernel_dir"/kernel-core-*.rpm \
+    "$kernel_dir"/kernel-modules-*.rpm \
+    "$kernel_dir"/kernel-devel-*.rpm
+
+mapfile -t controller_rpms < <(
+    find "$common_dir" "$kmods_dir" -maxdepth 1 -type f \
+        \( -name '*xone*.rpm' -o -name '*xpadneo*.rpm' \) -print
+)
+if ((${#controller_rpms[@]})); then
+    dnf5 install -y "${controller_rpms[@]}"
+fi
+
+dnf5 versionlock add kernel kernel-core kernel-modules kernel-devel
+
+pushd /usr/lib/kernel/install.d >/dev/null
+mv -f 05-rpmostree.install.axioma-backup 05-rpmostree.install
+mv -f 50-dracut.install.axioma-backup 50-dracut.install
+popd >/dev/null
+

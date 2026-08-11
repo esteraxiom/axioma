@@ -1,0 +1,39 @@
+#!/usr/bin/bash
+# SPDX-License-Identifier: GPL-3.0-only
+set -euo pipefail
+
+if ((EUID != 0)); then
+    exec sudo "$0" "$@"
+fi
+
+declare -A labels=(
+    [215737ed-3af3-486f-824f-7355ff47af24]='Mega Storage'
+    [41ac2461-f694-4af3-87b3-c785bce5d1ee]='Storage'
+)
+declare -A targets=(
+    [215737ed-3af3-486f-824f-7355ff47af24]='/mnt/MegaStorage'
+    [41ac2461-f694-4af3-87b3-c785bce5d1ee]='/mnt/Storage'
+)
+
+for uuid in "${!targets[@]}"; do
+    device="/dev/disk/by-uuid/${uuid}"
+    [[ -e "$device" ]] || { echo "Missing filesystem UUID ${uuid}" >&2; exit 1; }
+    actual_label=$(blkid -s LABEL -o value "$device")
+    [[ "$actual_label" == "${labels[$uuid]}" ]] || {
+        echo "UUID ${uuid} has unexpected label: ${actual_label}" >&2
+        exit 1
+    }
+done
+
+for uuid in "${!targets[@]}"; do
+    target=${targets[$uuid]}
+    install -d -m 0755 "$target"
+    if ! grep -Fq "UUID=${uuid}" /etc/fstab; then
+        printf 'UUID=%s %s ext4 defaults,nofail,x-systemd.device-timeout=10s 0 2\n' \
+            "$uuid" "$target" >>/etc/fstab
+    fi
+    mount "$target" 2>/dev/null || mount -a
+done
+
+findmnt /mnt/MegaStorage
+findmnt /mnt/Storage

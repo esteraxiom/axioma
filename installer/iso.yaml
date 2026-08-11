@@ -1,0 +1,11 @@
+label: "Axioma-Live"
+grub2:
+  timeout: 5
+  entries:
+    - name: "Launch Axioma Installer"
+      linux: "/images/pxeboot/vmlinuz quiet rhgb root=live:CDLABEL=Axioma-Live enforcing=0 rd.live.image"
+      initrd: "/images/pxeboot/initrd.img"
+    - name: "Launch Axioma Installer (Basic Graphics)"
+      linux: "/images/pxeboot/vmlinuz quiet rhgb root=live:CDLABEL=Axioma-Live enforcing=0 rd.live.image nomodeset"
+      initrd: "/images/pxeboot/initrd.img"
+

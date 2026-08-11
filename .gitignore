@@ -1,0 +1,9 @@
+.cache/
+.env
+output/
+result/
+*.iso
+*.qcow2
+*.raw
+*.sig
+

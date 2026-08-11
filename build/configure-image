@@ -1,0 +1,65 @@
+#!/usr/bin/bash
+# SPDX-License-Identifier: GPL-3.0-only
+set -euo pipefail
+
+install_manifest() {
+    local manifest=$1
+    mapfile -t packages < <(sed -E '/^[[:space:]]*(#|$)/d' "$manifest")
+    ((${#packages[@]})) && dnf5 install -y "${packages[@]}"
+}
+
+dnf5 install -y dnf5-plugins
+
+for copr in ublue-os/bazzite ublue-os/bazzite-multilib ublue-os/packages ublue-os/staging; do
+    dnf5 copr enable -y "$copr"
+done
+
+dnf5 install -y --nogpgcheck \
+    --repofrompath "terra,https://repos.fyralabs.com/terra${FEDORA_VERSION}" \
+    terra-release terra-release-extras terra-release-mesa
+
+dnf5 config-manager setopt 'terra-mesa.enabled=0'
+dnf5 config-manager setopt 'copr:copr.fedorainfracloud.org:ublue-os:bazzite.priority=2'
+dnf5 config-manager setopt 'copr:copr.fedorainfracloud.org:ublue-os:bazzite-multilib.priority=2'
+
+install_manifest /ctx/build/packages-core.txt
+install_manifest /ctx/build/packages-gaming.txt
+install_manifest /ctx/build/packages-desktop.txt
+
+# Vicinae is shipped by Terra; pin the requested release when it is present.
+dnf5 install -y "vicinae-${VICINAE_VERSION}" || dnf5 install -y vicinae
+
+# Bazzite replaces Fedora gamemode with dmemcg/uresourced management.
+dnf5 remove -y gamemode 2>/dev/null || true
+
+# Keep build-only third-party repositories installed but disabled at runtime.
+for repo in terra terra-extras terra-mesa tailscale; do
+    test -f "/etc/yum.repos.d/${repo}.repo" && \
+        sed -i 's/^enabled=1/enabled=0/' "/etc/yum.repos.d/${repo}.repo"
+done
+for copr in ublue-os/bazzite ublue-os/bazzite-multilib ublue-os/packages ublue-os/staging; do
+    dnf5 copr disable -y "$copr"
+done
+
+systemctl disable gdm.service sddm.service 2>/dev/null || true
+systemctl enable cosmic-greeter.service
+systemctl enable tuned-ppd.service 2>/dev/null || true
+systemctl enable greenboot-healthcheck.service greenboot-set-rollback-trigger.service
+systemctl enable uupd.timer input-remapper.service dmemcg-booster-system.service
+systemctl --global enable dmemcg-booster-user.service
+systemctl enable dev-hugepages1G.mount
+systemctl enable brew-setup.service 2>/dev/null || true
+
+systemctl disable scx_loader.service tailscaled.service waydroid-container.service \
+    libvirtd.service cockpit.socket beesd@.service 2>/dev/null || true
+
+if [[ -f /etc/tuned/ppd.conf ]]; then
+    sed -i \
+        -e 's/^power-saver=.*/power-saver=axioma-balanced/' \
+        -e 's/^balanced=.*/balanced=axioma-balanced/' \
+        -e 's/^performance=.*/performance=axioma-performance/' \
+        /etc/tuned/ppd.conf
+fi
+
+dnf5 clean all
+rm -rf /var/cache/dnf /var/cache/libdnf5

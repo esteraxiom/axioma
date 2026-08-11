@@ -1,0 +1,19 @@
+#!/usr/bin/bash
+# SPDX-License-Identifier: GPL-3.0-only
+set -euo pipefail
+
+state_dir=${XDG_CONFIG_HOME:-"$HOME/.config"}/axioma
+state_file=${state_dir}/welcome-complete
+install -d -m 0700 "$state_dir"
+
+if command -v yafti_gtk.py >/dev/null; then
+    yafti_gtk.py /usr/share/yafti/axioma.yml || true
+else
+    yad --title='Welcome to Axioma' --width=620 --image=computer \
+        --text='<big><b>Welcome to Axioma</b></big>\n\nUse the Axioma Setup entry in the application menu for migration, disks, optional services, updates and rollback.' \
+        --button='Open setup in a terminal':0 --button='Later':1 && \
+        cosmic-term -e bash -lc 'ujust axioma-status; exec bash'
+fi
+
+touch "$state_file"
+

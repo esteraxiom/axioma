@@ -1,0 +1,20 @@
+Axioma composes and adapts work from several upstream projects.
+
+The Axioma-specific source in this repository is GPL-3.0-only.
+
+Notable upstream projects:
+
+- Fedora COSMIC Atomic and Fedora packages: various Fedora-compatible licenses.
+- Universal Blue image-template and Bazzite: Apache-2.0.
+- Universal Blue akmods: Apache-2.0.
+- cosmic-ext-extra-sessions and cosmic-ext-alternative-startup: GPL-3.0.
+- COSMIC session and greeter: GPL-3.0.
+- niri: GPL-3.0.
+- DankMaterialShell: multiple licenses; see the upstream distribution.
+- Quickshell: LGPL-3.0-or-later and bundled component licenses.
+- Vicinae: GPL-3.0.
+
+Source locations and exact revisions are recorded in build/versions.env and
+the OCI image labels. Files copied or adapted from upstream retain their SPDX
+headers where present.
+

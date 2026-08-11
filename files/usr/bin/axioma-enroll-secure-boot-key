@@ -1,0 +1,13 @@
+#!/usr/bin/bash
+# SPDX-License-Identifier: GPL-3.0-only
+set -euo pipefail
+
+key=$(mktemp --suffix=.der)
+trap 'rm -f "$key"' EXIT
+curl --fail --location --retry 3 \
+    https://github.com/ublue-os/akmods/raw/main/certs/public_key.der \
+    --output "$key"
+echo '4e5c68474cb133fd8984d9599762cece9100c3e6cd8a9709aeaabd85dd9e70d1  '"$key" | sha256sum --check
+sudo mokutil --timeout -1
+printf 'universalblue\nuniversalblue\n' | sudo mokutil --import "$key"
+echo 'On the next reboot, complete MOK enrollment with password: universalblue'
